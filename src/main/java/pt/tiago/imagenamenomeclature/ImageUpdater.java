@@ -22,7 +22,7 @@ public class ImageUpdater {
 	public static final Logger noktLog = Logger.getLogger("nokLogger");
 
 	public static void main(String[] args) {
-		String basePath = "C:\\Users\\tiago.carvalho\\Documents\\TesteImagens\\";
+		String basePath = "";
 		List<String> unknownFormat = new ArrayList<String>();
 
 		File imageFolder = new File(basePath);
