@@ -41,7 +41,15 @@ public class ImageUpdater {
 			if (file.isDirectory()) {
 				iterateFolder(file, unknownFormat);
 			} else {
-				handleImage(file, unknownFormat);
+				String fileExtenstion = FilenameUtils.getExtension(file.getName());
+				if (fileExtenstion.equalsIgnoreCase("jpeg") || fileExtenstion.equalsIgnoreCase("jpg") || fileExtenstion.equalsIgnoreCase("png")
+						|| fileExtenstion.equalsIgnoreCase("gif") || fileExtenstion.equalsIgnoreCase("bmp")) {
+					handleImage(file, unknownFormat);
+				} else {
+					okLog.info("Skipped not supported file type: " + fileExtenstion + "  ; Filename: " + file.getName());
+					continue;
+				}
+
 			}
 		}
 		String path = FilenameUtils.getFullPath(folder.getPath()) + folder.getName() + File.separator;
