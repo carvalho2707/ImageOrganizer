@@ -1,4 +1,4 @@
-package pt.tiago.imagenamenomeclature;
+package pt.tiago.imageorganizer;
 
 import java.io.File;
 import java.io.FileInputStream;

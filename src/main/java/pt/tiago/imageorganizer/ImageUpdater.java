@@ -1,4 +1,4 @@
-package pt.tiago.imagenamenomeclature;
+package pt.tiago.imageorganizer;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,10 +22,13 @@ public class ImageUpdater {
 	public static final Logger noktLog = Logger.getLogger("nokLogger");
 
 	public static void main(String[] args) {
-		String basePath = "";
+		System.out.println("Started");
+		String basePath = args[0] + "\\";
+		System.out.println(basePath);
 		List<String> unknownFormat = new ArrayList<String>();
 
 		File imageFolder = new File(basePath);
+		System.out.println(imageFolder.getPath());
 		if (!imageFolder.exists()) {
 			noktLog.error("Folder Not Found");
 			return;
