@@ -21,6 +21,9 @@ public class ImageUpdater {
 
 	public static void main(String[] args) {
 		okLog.info("Started");
+		if(args.length == 0){
+			return;
+		}
 		String basePath = args[0] + "\\";
 		okLog.info(basePath);
 		List<String> unknownFormat = new ArrayList<String>();

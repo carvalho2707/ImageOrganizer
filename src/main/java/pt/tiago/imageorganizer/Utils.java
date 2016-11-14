@@ -42,6 +42,7 @@ public class Utils {
 		return sdf.format(cal.getTime());
 	}
 
+	@SuppressWarnings("deprecation")
 	public static String getNameFromExifSubIFDDirectory(File img, Metadata metadata) {
 		String name = null;
 		String originalName = img.getName();
@@ -58,6 +59,7 @@ public class Utils {
 		return name;
 	}
 
+	@SuppressWarnings("deprecation")
 	public static String getNameFromFileMetadataDirectory(File img, Metadata metadata) {
 		String name = null;
 		String originalName = img.getName();
