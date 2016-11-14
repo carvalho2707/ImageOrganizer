@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
@@ -16,21 +17,18 @@ public class ImageUpdater {
 	public static final String ERROR_PATH = "error\\";
 	public static final String BACKUP_PATH = "backup\\";
 	public static final String UPDATED_PATH = "updated\\";
-	public static final String UNTOUCHED_PATH = "untouched\\";
-	public static final String FINAL_PATH = "final\\";
 	public static final Logger okLog = Logger.getLogger("okLogger");
-	public static final Logger noktLog = Logger.getLogger("nokLogger");
 
 	public static void main(String[] args) {
-		System.out.println("Started");
+		okLog.info("Started");
 		String basePath = args[0] + "\\";
-		System.out.println(basePath);
+		okLog.info(basePath);
 		List<String> unknownFormat = new ArrayList<String>();
 
 		File imageFolder = new File(basePath);
-		System.out.println(imageFolder.getPath());
+		okLog.info(imageFolder.getPath());
 		if (!imageFolder.exists()) {
-			noktLog.error("Folder Not Found");
+			okLog.error("Folder Not Found");
 			return;
 		}
 		iterateFolder(imageFolder, unknownFormat);
@@ -52,34 +50,13 @@ public class ImageUpdater {
 					okLog.info("Skipped not supported file type: " + fileExtenstion + "  ; Filename: " + file.getName());
 					continue;
 				}
-
 			}
-		}
-		String path = FilenameUtils.getFullPath(folder.getPath()) + folder.getName() + File.separator;
-		File finalFolder = new File(path + FINAL_PATH);
-		if (!finalFolder.exists()) {
-			finalFolder.mkdirs();
-		}
-
-		try {
-			for (File img : new File(path + UNTOUCHED_PATH).listFiles()) {
-				String originalFileName = FilenameUtils.removeExtension(img.getName());
-				File backup = new File(path + FINAL_PATH + originalFileName + "." + FilenameUtils.getExtension(img.getName()));
-				Utils.copyFileUsingStream(img, backup);
-			}
-
-			for (File img : new File(path + UPDATED_PATH).listFiles()) {
-				String originalFileName = FilenameUtils.removeExtension(img.getName());
-				File backup = new File(path + FINAL_PATH + originalFileName + "." + FilenameUtils.getExtension(img.getName()));
-				Utils.copyFileUsingStream(img, backup);
-			}
-		} catch (IOException e) {
-			noktLog.error(e);
 		}
 	}
 
 	public static void handleImage(File img, List<String> unknownFormat) {
 		try {
+			okLog.info("-----------------------------------------------");
 			boolean allowed = false;
 			String name = null;
 			String path = FilenameUtils.getFullPath(img.getPath());
@@ -100,17 +77,13 @@ public class ImageUpdater {
 				updatedFolder.mkdirs();
 			}
 
-			File notTouchedFolder = new File(path + UNTOUCHED_PATH);
-			if (!notTouchedFolder.exists()) {
-				notTouchedFolder.mkdirs();
-			}
-
 			File backup = new File(path + BACKUP_PATH + originalFileName + "." + FilenameUtils.getExtension(img.getName()));
 
 			Utils.copyFileUsingStream(img, backup);
 
 			Metadata metadata = ImageMetadataReader.readMetadata(img);
 			int method = 0;
+			okLog.info("OriginalName: " + originalFileName);
 			if (metadata != null) {
 				name = Utils.getNameFromExifSubIFDDirectory(img, metadata);
 				method = 1;
@@ -126,37 +99,48 @@ public class ImageUpdater {
 				name = Utils.getNameFromFileMetadataDirectory(img, metadata);
 				method = 3;
 			}
-			if (name != null && !originalFileName.equals(name)) {
-				okLog.info("Name is different! Method : " + method);
+
+			if (name != null) {
+				okLog.info("Name is " + (originalFileName.equals(name) ? "Equal!" : "Different") + " ;Method: " + method);
 				File newImage = new File(path + UPDATED_PATH + name + "." + FilenameUtils.getExtension(img.getName()));
-				boolean result = img.renameTo(newImage);
+				boolean result = false;
+				if (newImage.exists()) {
+					okLog.error("File already exists");
+					String auxName = name.substring(0, name.length() - 1);
+					auxName += new Random().nextInt(10);
+					okLog.info("Generating new name: " + auxName);
+					newImage = new File(path + UPDATED_PATH + auxName + "." + FilenameUtils.getExtension(img.getName()));
+					if (newImage.exists()) {
+						okLog.error("Second File already exists");
+					} else {
+						result = img.renameTo(newImage);
+					}
+				} else {
+					result = img.renameTo(newImage);
+				}
 				if (result) {
 					okLog.info("DONE");
 				} else {
-					noktLog.error("ERROR");
+					okLog.error("FAILED");
 				}
-			} else if (name != null && originalFileName.equals(name)) {
-				System.out.println("Name is Correct! Method : " + method);
-				File newImage = new File(path + UNTOUCHED_PATH + originalFileName + "." + FilenameUtils.getExtension(img.getName()));
-				boolean moved = img.renameTo(newImage);
-				if (moved) {
-					okLog.info("Moved: OK");
-				} else {
-					noktLog.error("Moved:NOK");
-				}
-			} else if (name == null) {
+			} else {
 				okLog.info("Moving unknow files");
 				File newImage = new File(path + ERROR_PATH + originalFileName + "." + FilenameUtils.getExtension(img.getName()));
+				if (newImage.exists()) {
+					okLog.error("File already exists");
+				}
 				boolean moved = img.renameTo(newImage);
 				if (moved) {
-					okLog.info("Moved: OK");
+					okLog.info("DONE");
+				} else {
+					okLog.error("FAILED");
 				}
 			}
-			System.out.println("-----------------------------------------------");
+			okLog.info("-----------------------------------------------");
 		} catch (ImageProcessingException e) {
-			noktLog.error(e);
+			okLog.error(e);
 		} catch (IOException e) {
-			noktLog.error(e);
+			okLog.error(e);
 		}
 	}
 }

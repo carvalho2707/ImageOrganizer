@@ -13,6 +13,7 @@ import java.util.Random;
 import java.util.TimeZone;
 
 import org.apache.commons.io.FilenameUtils;
+import org.apache.log4j.Logger;
 
 import com.drew.metadata.Metadata;
 import com.drew.metadata.exif.ExifSubIFDDirectory;
@@ -20,6 +21,7 @@ import com.drew.metadata.file.FileMetadataDirectory;
 
 public class Utils {
 	private static final String IMG_PREFFIX = "IMG_";
+	public static final Logger okLog = Logger.getLogger("okLogger");
 
 	public static String getNameFromDate(Date date) {
 		Calendar cal = Calendar.getInstance();
@@ -44,14 +46,13 @@ public class Utils {
 		String name = null;
 		String originalName = img.getName();
 		originalName = FilenameUtils.removeExtension(originalName);
-		System.out.println("OriginalName: " + originalName);
 		ExifSubIFDDirectory directory = metadata.getFirstDirectoryOfType(ExifSubIFDDirectory.class);
 		if (directory != null && !directory.isEmpty()) {
 			Date date = directory.getDate(ExifSubIFDDirectory.TAG_DATETIME_ORIGINAL);
 			if (date != null) {
 				name = getNameFromDate(date);
-				System.out.println("Date Mod    : " + date.toGMTString());
-				System.out.println("New Name    : " + name);
+				okLog.info("Date Mod    : " + date.toGMTString());
+				okLog.info("New Name    : " + name);
 			}
 		}
 		return name;
@@ -61,13 +62,12 @@ public class Utils {
 		String name = null;
 		String originalName = img.getName();
 		originalName = FilenameUtils.removeExtension(originalName);
-		System.out.println("OriginalName: " + originalName);
 		FileMetadataDirectory fileDirectory = metadata.getFirstDirectoryOfType(FileMetadataDirectory.class);
 		Date date = fileDirectory.getDate(FileMetadataDirectory.TAG_FILE_MODIFIED_DATE);
 		if (date != null) {
 			name = getNameFromDate(date);
-			System.out.println("Date Mod    : " + date.toGMTString());
-			System.out.println("New Name    : " + name);
+			okLog.info("Date Mod    : " + date.toGMTString());
+			okLog.info("New Name    : " + name);
 		}
 		return name;
 	}
@@ -95,7 +95,6 @@ public class Utils {
 		// IMG_001
 		String originalName = img.getName();
 		originalName = FilenameUtils.removeExtension(originalName);
-		System.out.println("OriginalName: " + originalName);
 
 		if (originalName.startsWith("IMG_") && !originalName.contains("WA") && originalName.length() == 19) {
 			// IMG_YYYYMMDD_HHMMSS
@@ -110,7 +109,7 @@ public class Utils {
 			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
 				return null;
 			}
-			System.out.println("New Name    :" + " IMG_" + tmpName);
+			okLog.info("New Name    :" + " IMG_" + tmpName);
 			return "IMG_" + tmpName;
 		} else if (originalName.startsWith("IMG-") && originalName.contains("-WA")) {
 			// IMG-YYYYMMDD-WA0005
@@ -132,7 +131,7 @@ public class Utils {
 				return null;
 			}
 
-			System.out.println("New Name    :" + " IMG_" + tmpName + "_" + mod);
+			okLog.info("New Name    :" + " IMG_" + tmpName + "_" + mod);
 			return "IMG_" + tmpName + "_" + mod;
 		} else if (originalName.startsWith("runtastic")) {
 			// runtasticYYYY-MM-DD_HH_MM_SS
@@ -146,7 +145,7 @@ public class Utils {
 			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
 				return null;
 			}
-			System.out.println("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
+			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
 			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
 		} else if (originalName.contains("WhatsApp")) {
 			// WhatsApp Image YYYY-MM-DD at HH.MM.SS
@@ -161,7 +160,7 @@ public class Utils {
 			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
 				return null;
 			}
-			System.out.println("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
+			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
 			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
 		} else if (originalName.startsWith("Snapchat-") && originalName.length() == 23) {
 			// Snapchat-20140531114201
@@ -175,7 +174,7 @@ public class Utils {
 			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
 				return null;
 			}
-			System.out.println("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
+			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
 			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
 		} else if (originalName.startsWith("DSC") || (originalName.startsWith("Snapchat-") && originalName.length() != 23)
 				|| (originalName.startsWith("IMG_") && originalName.length() < 15)) {
@@ -186,8 +185,11 @@ public class Utils {
 			// String newName = "IMG_" + new Random().nextInt(100000);
 			// System.out.println("New Name : " + newName);
 			// return newName;
+			String name = "IMG_U" + new Random().nextInt(1000000);
+			okLog.info("New Name    : " + name);
+			return name;
 		} else {
-			System.out.println("UNKNOWN FORMAT");
+			okLog.error("UNKNOWN FORMAT");
 		}
 		return null;
 	}
