@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
@@ -14,17 +13,15 @@ import com.drew.imaging.ImageProcessingException;
 import com.drew.metadata.Metadata;
 
 public class ImageUpdater {
-	public static final String ERROR_PATH = "error\\";
-	public static final String BACKUP_PATH = "backup\\";
-	public static final String UPDATED_PATH = "updated\\";
 	public static final Logger okLog = Logger.getLogger("okLogger");
 
 	public static void main(String[] args) {
 		okLog.info("Started");
-		if(args.length == 0){
+		if (args.length == 0) {
 			return;
 		}
 		String basePath = args[0] + "\\";
+//		String basePath = "C:\\Users\\tiago.carvalho\\Documents\\Teste\\";
 		okLog.info(basePath);
 		List<String> unknownFormat = new ArrayList<String>();
 
@@ -65,25 +62,6 @@ public class ImageUpdater {
 			String path = FilenameUtils.getFullPath(img.getPath());
 			String originalFileName = FilenameUtils.removeExtension(img.getName());
 
-			File backupFolder = new File(path + BACKUP_PATH);
-			if (!backupFolder.exists()) {
-				backupFolder.mkdirs();
-			}
-
-			File errorFolder = new File(path + ERROR_PATH);
-			if (!errorFolder.exists()) {
-				errorFolder.mkdirs();
-			}
-
-			File updatedFolder = new File(path + UPDATED_PATH);
-			if (!updatedFolder.exists()) {
-				updatedFolder.mkdirs();
-			}
-
-			File backup = new File(path + BACKUP_PATH + originalFileName + "." + FilenameUtils.getExtension(img.getName()));
-
-			Utils.copyFileUsingStream(img, backup);
-
 			Metadata metadata = ImageMetadataReader.readMetadata(img);
 			int method = 0;
 			okLog.info("OriginalName: " + originalFileName);
@@ -94,7 +72,7 @@ public class ImageUpdater {
 			if (name == null) {
 				name = Utils.getNameFromImageName(img, metadata);
 				if (name == null) {
-					unknownFormat.add(originalFileName);
+					unknownFormat.add(img.getPath());
 				}
 				method = 2;
 			}
@@ -104,40 +82,39 @@ public class ImageUpdater {
 			}
 
 			if (name != null) {
-				okLog.info("Name is " + (originalFileName.equals(name) ? "Equal!" : "Different") + " ;Method: " + method);
-				File newImage = new File(path + UPDATED_PATH + name + "." + FilenameUtils.getExtension(img.getName()));
-				boolean result = false;
-				if (newImage.exists()) {
-					okLog.error("File already exists");
-					String auxName = name.substring(0, name.length() - 1);
-					auxName += new Random().nextInt(10);
-					okLog.info("Generating new name: " + auxName);
-					newImage = new File(path + UPDATED_PATH + auxName + "." + FilenameUtils.getExtension(img.getName()));
-					if (newImage.exists()) {
-						okLog.error("Second File already exists");
-					} else {
-						result = img.renameTo(newImage);
-					}
-				} else {
-					result = img.renameTo(newImage);
+				if (originalFileName.equals(name)) {
+					okLog.info("Name is Equal!" + " ;Method: " + method);
+					return;
 				}
-				if (result) {
-					okLog.info("DONE");
+				okLog.info("Name is Different ;Method: " + method);
+				File newImage = new File(path + name + "." + FilenameUtils.getExtension(img.getName()));
+				boolean notUnique = newImage.exists();
+				String auxName = name;
+				int count = 0;
+				while (notUnique) {
+					okLog.error("File: " + auxName + " already exists");
+					auxName = name.substring(0, name.length() - 1);
+					auxName += count++;
+					okLog.info("Generating new name: " + auxName);
+					newImage = new File(path + auxName + "." + FilenameUtils.getExtension(img.getName()));
+					if (!newImage.exists()) {
+						notUnique = false;
+					} else if (count > 9) {
+						break;
+					}
+				}
+				if (notUnique) {
+					okLog.error("NO NAME AVAILABLE");
 				} else {
-					okLog.error("FAILED");
+					boolean result = img.renameTo(newImage);
+					if (result) {
+						okLog.info("DONE");
+					} else {
+						okLog.error("FAILED");
+					}
 				}
 			} else {
-				okLog.info("Moving unknow files");
-				File newImage = new File(path + ERROR_PATH + originalFileName + "." + FilenameUtils.getExtension(img.getName()));
-				if (newImage.exists()) {
-					okLog.error("File already exists");
-				}
-				boolean moved = img.renameTo(newImage);
-				if (moved) {
-					okLog.info("DONE");
-				} else {
-					okLog.error("FAILED");
-				}
+				okLog.error("Unkown Date");
 			}
 			okLog.info("-----------------------------------------------");
 		} catch (ImageProcessingException e) {

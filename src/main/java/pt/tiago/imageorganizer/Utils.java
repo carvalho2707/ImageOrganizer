@@ -1,16 +1,12 @@
 package pt.tiago.imageorganizer;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Random;
 import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.io.FilenameUtils;
 import org.apache.log4j.Logger;
@@ -85,16 +81,6 @@ public class Utils {
 	}
 
 	public static String getNameFromImageName(File img, Metadata metadata) {
-		// IMG-YYYYMMDD-WA0005
-		// IMG_YYYYMMDD_HHMMSS
-		// runtasticYYYY-MM-DD_HH_MM_SS
-		// YYYY-MM-DD HH.MM.SS
-		// YYYYMMDD_HHMMSS
-		// DSC_0136
-		// DSC00085
-		// Snapchat-20140531114201
-		// Snapchat-3700987456750269998
-		// IMG_001
 		String originalName = img.getName();
 		originalName = FilenameUtils.removeExtension(originalName);
 
@@ -178,18 +164,103 @@ public class Utils {
 			}
 			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
 			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
-		} else if (originalName.startsWith("DSC") || (originalName.startsWith("Snapchat-") && originalName.length() != 23)
-				|| (originalName.startsWith("IMG_") && originalName.length() < 15)) {
+		} else if (originalName.matches("[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}.[0-9]{2}.[0-9]{2}")) {
+			// 2013-12-13 19.38.40
+			String tmpName = originalName;
+			String yyyy = tmpName.substring(0, 4);
+			String mm = tmpName.substring(5, 7);
+			String dd = tmpName.substring(8, 10);
+			String hh = tmpName.substring(11, 13);
+			String min = tmpName.substring(14, 16);
+			String ss = tmpName.substring(17, 19);
+			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
+				return null;
+			}
+			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
+			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
+		} else if (originalName.matches("[aA-zZ]*_[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}")) {
+			// Screenshot_2014-11-09-13-32-08
+			int pos = originalName.indexOf("_");
+			String tmpName = originalName.substring(pos + 1);
+			String yyyy = tmpName.substring(0, 4);
+			String mm = tmpName.substring(5, 7);
+			String dd = tmpName.substring(8, 10);
+			String hh = tmpName.substring(11, 13);
+			String min = tmpName.substring(14, 16);
+			String ss = tmpName.substring(17, 19);
+			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
+				return null;
+			}
+			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
+			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
+		} else if (originalName.matches("[0-9]{8}_[0-9]{6}") || originalName.matches("_[0-9]{8}_[0-9]{6}")) {
+			// 20141012_000928
+			// _20141012_000928
+			String tmpName = originalName;
+			if (originalName.indexOf("_") == 0) {
+				tmpName = originalName.substring(1);
+			}
+			String yyyy = tmpName.substring(0, 4);
+			String mm = tmpName.substring(4, 6);
+			String dd = tmpName.substring(6, 8);
+			String hh = tmpName.substring(9, 11);
+			String min = tmpName.substring(11, 13);
+			String ss = tmpName.substring(13, 15);
+			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
+				return null;
+			}
+			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
+			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
+		} else if (originalName.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{2}.*")) {
+			// 2014-07-23_10-44-37.539_1095827725
+			String tmpName = originalName;
+			String yyyy = tmpName.substring(0, 4);
+			String mm = tmpName.substring(5, 7);
+			String dd = tmpName.substring(8, 10);
+			String hh = tmpName.substring(11, 13);
+			String min = tmpName.substring(14, 16);
+			String ss = tmpName.substring(17, 19);
+			if (!Utils.validateGeneratedDate(yyyy, mm, dd, hh, min, ss, null)) {
+				return null;
+			}
+			okLog.info("New Name    :" + " IMG_" + yyyy + mm + dd + "_" + hh + min + ss);
+			return "IMG_" + yyyy + mm + dd + "_" + hh + min + ss;
+		} else if (originalName.matches("^[0-9]{1,13}$") || originalName.matches("FxCam_[0-9]{1,13}$") || originalName.matches("received_[0-9]*")) {
+			// 1415539314493
+			// FxCam_1362085869892
+			String tmpName = originalName;
+			if (originalName.contains("received")) {
+				int pos = originalName.indexOf("_");
+				tmpName = originalName.substring(pos + 1);
+				long milis = TimeUnit.MILLISECONDS.convert(Long.valueOf(tmpName), TimeUnit.MICROSECONDS);
+				tmpName = String.valueOf(milis);
+			}
+			Calendar calendar = Calendar.getInstance();
+			calendar.setTimeInMillis(Long.valueOf(tmpName));
+			calendar.setTimeZone(TimeZone.getTimeZone("UTC"));
+			String yyyy = String.valueOf(calendar.get(Calendar.YEAR));
+			int month = calendar.get(Calendar.MONTH);
+			int dd = calendar.get(Calendar.DAY_OF_MONTH);
+			int hh = calendar.get(Calendar.HOUR_OF_DAY);
+			int min = calendar.get(Calendar.MINUTE);
+			int ss = calendar.get(Calendar.SECOND);
+			String monthVal = (month < 10) ? (0 + "" + month) : ("" + month);
+			String dayVal = (dd < 10) ? (0 + "" + dd) : ("" + dd);
+			String hourVal = (hh < 10) ? (0 + "" + hh) : ("" + hh);
+			String minVal = (min < 10) ? (0 + "" + min) : ("" + min);
+			String secVal = (ss < 10) ? (0 + "" + ss) : ("" + ss);
+			if (!Utils.validateGeneratedDate(yyyy, monthVal, dayVal, hourVal, minVal, secVal, null)) {
+				return null;
+			}
+			okLog.info("New Name    :" + " IMG_" + yyyy + monthVal + dayVal + "_" + hourVal + minVal + secVal);
+			return "IMG_" + yyyy + monthVal + dayVal + "_" + hourVal + minVal + secVal;
+		} else if (originalName.startsWith("DSC") || (originalName.startsWith("IMG_") && originalName.length() < 15)) {
 			// DSC_0136
 			// DSC00085
-			// Snapchat-3700987456750269998
 			// IMG_001
-			// String newName = "IMG_" + new Random().nextInt(100000);
-			// System.out.println("New Name : " + newName);
-			// return newName;
 			String name = "IMG_U" + new Random().nextInt(1000000);
 			okLog.info("New Name    : " + name);
-			return name;
+			return null;
 		} else {
 			okLog.error("UNKNOWN FORMAT");
 		}
@@ -223,20 +294,4 @@ public class Utils {
 		return true;
 	}
 
-	public static void copyFileUsingStream(File source, File dest) throws IOException {
-		InputStream is = null;
-		OutputStream os = null;
-		try {
-			is = new FileInputStream(source);
-			os = new FileOutputStream(dest);
-			byte[] buffer = new byte[1024];
-			int length;
-			while ((length = is.read(buffer)) > 0) {
-				os.write(buffer, 0, length);
-			}
-		} finally {
-			is.close();
-			os.close();
-		}
-	}
 }
